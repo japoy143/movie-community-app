@@ -1,26 +1,516 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* =========================================================================
+   Movie Community design system
+   Principles (drawn from feed-based social apps):
+   - Neutral canvas, one accent used sparingly, content (posters) carries color.
+   - Hairline borders over shadows; shadows only for floating layers.
+   - Compact 15px body type, bold names, muted metadata, tight headings.
+   - Restrained corners on a 4px scale; circles only for avatars and icon buttons.
+   - Mobile: single column + bottom tab bar. Tablet: icon rail.
+     Desktop: rail + centered feed + side column.
+   All colors are semantic CSS variables so light/dark swap in one place.
+   ========================================================================= */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ---------- 1. Semantic color tokens ---------- */
+
+:root {
+  color-scheme: light;
+
+  --canvas: oklch(1 0 0);
+  --surface: oklch(0.985 0 0);
+  --surface-raised: oklch(1 0 0);
+  --surface-hover: oklch(0.96 0 0);
+  --surface-active: oklch(0.93 0 0);
+
+  --fg: oklch(0.18 0 0);
+  --fg-muted: oklch(0.45 0 0);
+  --fg-subtle: oklch(0.55 0 0);
+
+  --border: oklch(0.89 0 0);
+  --border-strong: oklch(0.8 0 0);
+
+  --accent: oklch(0.52 0.2 285);
+  --accent-hover: oklch(0.47 0.2 285);
+  --accent-fg: oklch(1 0 0);
+  --accent-soft: oklch(0.95 0.03 285);
+
+  --inverse: oklch(0.18 0 0);
+  --inverse-fg: oklch(1 0 0);
+
+  --danger: oklch(0.55 0.21 25);
+  --success: oklch(0.58 0.15 150);
+  --rating: oklch(0.78 0.16 80);
+
+  --overlay: oklch(0 0 0 / 0.5);
+  --media-outline: oklch(0 0 0 / 0.08);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --canvas: oklch(0.145 0 0);
+    --surface: oklch(0.19 0 0);
+    --surface-raised: oklch(0.21 0 0);
+    --surface-hover: oklch(0.22 0 0);
+    --surface-active: oklch(0.26 0 0);
+
+    --fg: oklch(0.96 0 0);
+    --fg-muted: oklch(0.72 0 0);
+    --fg-subtle: oklch(0.62 0 0);
+
+    --border: oklch(0.28 0 0);
+    --border-strong: oklch(0.38 0 0);
+
+    --accent: oklch(0.74 0.14 285);
+    --accent-hover: oklch(0.8 0.12 285);
+    --accent-fg: oklch(0.145 0 0);
+    --accent-soft: oklch(0.27 0.06 285);
+
+    --inverse: oklch(0.96 0 0);
+    --inverse-fg: oklch(0.145 0 0);
+
+    --danger: oklch(0.68 0.19 25);
+    --success: oklch(0.72 0.15 150);
+    --rating: oklch(0.82 0.15 80);
+
+    --overlay: oklch(0 0 0 / 0.7);
+    --media-outline: oklch(1 0 0 / 0.1);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: oklch(0.145 0 0);
+  --surface: oklch(0.19 0 0);
+  --surface-raised: oklch(0.21 0 0);
+  --surface-hover: oklch(0.22 0 0);
+  --surface-active: oklch(0.26 0 0);
+
+  --fg: oklch(0.96 0 0);
+  --fg-muted: oklch(0.72 0 0);
+  --fg-subtle: oklch(0.62 0 0);
+
+  --border: oklch(0.28 0 0);
+  --border-strong: oklch(0.38 0 0);
+
+  --accent: oklch(0.74 0.14 285);
+  --accent-hover: oklch(0.8 0.12 285);
+  --accent-fg: oklch(0.145 0 0);
+  --accent-soft: oklch(0.27 0.06 285);
+
+  --inverse: oklch(0.96 0 0);
+  --inverse-fg: oklch(0.145 0 0);
+
+  --danger: oklch(0.68 0.19 25);
+  --success: oklch(0.72 0.15 150);
+  --rating: oklch(0.82 0.15 80);
+
+  --overlay: oklch(0 0 0 / 0.7);
+  --media-outline: oklch(1 0 0 / 0.1);
+}
+
+/* `dark:` follows the OS unless <html data-theme="light|dark"> overrides it. */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+}
+
+/* ---------- 2. Tailwind theme ---------- */
+
+/* Tokens that reference runtime variables → `inline` so utilities use var(). */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-active: var(--surface-active);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-inverse: var(--inverse);
+  --color-inverse-fg: var(--inverse-fg);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-rating: var(--rating);
+  --color-overlay: var(--overlay);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo,
+    monospace;
+
+  --shadow-overlay: 0 0 0 1px var(--border), 0 8px 28px oklch(0 0 0 / 0.14);
+}
+
+@theme {
+  /* Compact, social-style type scale (body = 15px). */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.125rem;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.375rem;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.875rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.5rem;
+  --text-5xl: 3rem;
+  --text-5xl--line-height: 1.05;
+
+  /* Radii on a 4px scale. Smaller elements get smaller radii:
+       sm  2px  inner items (popover rows), badges
+       md  4px  controls: buttons, inputs, chips, alerts
+       lg  6px  media (posters), nav items, popovers
+       xl  8px  cards, dialogs, grouped panels
+     rounded-full only for avatars and icon-only buttons.
+     Nested corners must be concentric: inner = outer − padding
+     (e.g. popover lg 6px with p-1 → rows rounded-sm 2px). */
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.75rem;
+
+  /* Layout widths (max-w-feed, max-w-aside, max-w-page, max-w-prose). */
+  --container-feed: 37.5rem;
+  --container-aside: 21.875rem;
+  --container-page: 80rem;
+  --container-prose: 40rem;
+
+  /* Fixed chrome sizes (h-header, w-rail, ...). Spacing scale stays 4px. */
+  --spacing-header: 3.5rem;
+  --spacing-tabbar: 3.5rem;
+  --spacing-rail: 4.5rem;
+  --spacing-rail-wide: 15rem;
+
+  /* Media frames. */
+  --aspect-poster: 2 / 3;
+  --aspect-backdrop: 16 / 9;
+  --aspect-portrait: 4 / 5;
+
+  --ease-snappy: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ---------- 3. Base ---------- */
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-canvas font-sans text-base text-fg antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-bold tracking-tight text-balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ---------- 4. Components & primitives ---------- */
+/* Utilities always win over these, so `class="btn btn-primary h-12"` works. */
+
+@layer components {
+  /* Typography roles */
+  .text-display {
+    @apply text-4xl font-extrabold tracking-tight sm:text-5xl;
+  }
+  .text-title {
+    @apply text-2xl font-bold tracking-tight sm:text-3xl;
+  }
+  .text-headline {
+    @apply text-xl font-bold tracking-tight;
+  }
+  .text-meta {
+    @apply text-sm text-fg-muted;
+  }
+
+  /* Containers */
+  .container-page {
+    @apply mx-auto w-full max-w-page px-4 sm:px-6 lg:px-8;
+  }
+  .container-feed {
+    @apply mx-auto w-full max-w-feed;
+  }
+  .container-prose {
+    @apply mx-auto w-full max-w-prose px-4;
+  }
+
+  /* Layout primitives */
+  .stack {
+    @apply flex flex-col gap-4;
+  }
+  .cluster {
+    @apply flex flex-wrap items-center gap-2;
+  }
+  /* Auto-filling grid; set --grid-min to change the column threshold. */
+  .grid-auto {
+    display: grid;
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(var(--grid-min, 12rem), 100%), 1fr)
+    );
+    @apply gap-4;
+  }
+  .poster-grid {
+    --grid-min: 8.5rem;
+    display: grid;
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(var(--grid-min), 100%), 1fr)
+    );
+    @apply gap-3 sm:gap-4;
+  }
+  /* Horizontal swipe row (e.g. "trending" carousels). */
+  .scroll-row {
+    @apply -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2;
+    scrollbar-width: none;
+  }
+  .scroll-row > * {
+    @apply shrink-0 snap-start;
+  }
+
+  /* Surfaces */
+  .card {
+    @apply rounded-xl border border-border bg-canvas p-4;
+  }
+  /* Use together with .card: class="card card-interactive" */
+  .card-interactive {
+    @apply transition-colors hover:bg-surface-hover;
+  }
+  .popover {
+    @apply rounded-lg bg-surface-raised p-1 shadow-overlay;
+  }
+
+  /* Imagery */
+  .media {
+    @apply overflow-hidden rounded-lg bg-surface-active object-cover;
+    outline: 1px solid var(--media-outline);
+    outline-offset: -1px;
+  }
+  /* Use together with .media: class="media poster" */
+  .poster {
+    @apply aspect-poster w-full;
+  }
+  .backdrop {
+    @apply aspect-backdrop w-full;
+  }
+  .avatar {
+    @apply aspect-square shrink-0 rounded-full bg-surface-active object-cover;
+    outline: 1px solid var(--media-outline);
+    outline-offset: -1px;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold whitespace-nowrap select-none;
+    @apply transition-[background-color,color,border-color,opacity] duration-150 ease-snappy;
+    @apply disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-accent text-accent-fg hover:bg-accent-hover;
+  }
+  .btn-contrast {
+    @apply bg-inverse text-inverse-fg hover:opacity-90;
+  }
+  .btn-secondary {
+    @apply border border-border-strong bg-transparent text-fg hover:bg-surface-hover;
+  }
+  .btn-ghost {
+    @apply bg-transparent text-fg hover:bg-surface-hover active:bg-surface-active;
+  }
+  .btn-danger {
+    @apply bg-danger text-white hover:opacity-90;
+  }
+  .btn-sm {
+    @apply h-8 px-3 text-xs;
+  }
+  .btn-lg {
+    @apply h-12 px-6 text-base;
+  }
+  .btn-icon {
+    @apply size-10 rounded-full p-0;
+  }
+  .btn-icon.btn-sm {
+    @apply size-8;
+  }
+  @media (pointer: coarse) {
+    .btn {
+      min-height: 2.75rem;
+    }
+    .btn-icon {
+      min-width: 2.75rem;
+    }
+  }
+
+  /* Chips (genre filters, tags). Use aria-pressed for toggles. */
+  .chip {
+    @apply inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-transparent px-3 text-sm font-medium text-fg transition-colors hover:bg-surface-hover;
+    @apply aria-pressed:border-transparent aria-pressed:bg-inverse aria-pressed:text-inverse-fg;
+  }
+
+  /* Links */
+  .link {
+    @apply font-medium text-accent underline-offset-2 hover:underline;
+  }
+  .link-muted {
+    @apply text-fg-muted underline-offset-2 hover:text-fg hover:underline;
+  }
+
+  /* Forms */
+  .field {
+    @apply flex flex-col gap-1.5;
+  }
+  .label {
+    @apply text-sm font-semibold text-fg;
+  }
+  .input {
+    @apply h-11 w-full rounded-md border border-border-strong bg-canvas px-3 text-base text-fg transition-colors placeholder:text-fg-subtle;
+    @apply hover:border-fg-subtle focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30;
+    @apply aria-invalid:border-danger disabled:opacity-50;
+  }
+  .textarea {
+    @apply min-h-24 w-full resize-y rounded-md border border-border-strong bg-canvas px-3 py-2.5 text-base text-fg transition-colors placeholder:text-fg-subtle;
+    @apply hover:border-fg-subtle focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30;
+    @apply aria-invalid:border-danger disabled:opacity-50;
+  }
+  .hint {
+    @apply text-xs text-fg-muted;
+  }
+  .form-error {
+    @apply rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger;
+  }
+
+  /* Modal dialog (native <dialog>, see components/ui/confirm-dialog.tsx). */
+  .dialog {
+    @apply m-auto w-[calc(100%-2rem)] max-w-sm rounded-xl border border-border bg-canvas p-0 text-fg shadow-overlay;
+  }
+  .dialog[open] {
+    animation: dialog-in 150ms var(--ease-snappy);
+  }
+  .dialog::backdrop {
+    background: var(--overlay);
+  }
+
+  /* Dividers */
+  .divider {
+    @apply border-t border-border;
+  }
+
+  /* ---- App shell: tab bar (mobile) → icon rail (sm) → rail + aside (lg) ---- */
+  .app-shell {
+    @apply mx-auto grid min-h-dvh grid-cols-1;
+    padding-bottom: calc(var(--spacing-tabbar) + env(safe-area-inset-bottom));
+
+    @variant sm {
+      grid-template-columns: var(--spacing-rail) minmax(0, var(--container-feed));
+      justify-content: center;
+      padding-bottom: 0;
+    }
+    @variant lg {
+      grid-template-columns:
+        var(--spacing-rail) minmax(0, var(--container-feed))
+        var(--container-aside);
+      column-gap: 1.5rem;
+    }
+    @variant xl {
+      grid-template-columns:
+        var(--spacing-rail-wide) minmax(0, var(--container-feed))
+        var(--container-aside);
+      column-gap: 2rem;
+    }
+  }
+
+  .app-rail {
+    @apply sticky top-0 hidden h-dvh flex-col gap-1 py-3 sm:flex sm:items-center xl:items-stretch xl:px-3;
+  }
+  .app-main {
+    @apply min-w-0 sm:border-x sm:border-border;
+  }
+  .app-aside {
+    @apply sticky top-0 hidden h-dvh flex-col gap-4 overflow-y-auto py-3 lg:flex;
+  }
+  .app-header {
+    @apply sticky top-0 z-30 flex h-header items-center gap-3 border-b border-border bg-canvas/80 px-4 backdrop-blur-md;
+  }
+
+  .nav-item {
+    @apply flex h-12 items-center gap-4 rounded-lg px-3 text-lg text-fg transition-colors hover:bg-surface-hover;
+    @apply aria-[current=page]:font-bold;
+  }
+  .nav-label {
+    @apply hidden xl:inline;
+  }
+
+  .tabbar {
+    @apply fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-canvas/90 backdrop-blur-md sm:hidden;
+    height: calc(var(--spacing-tabbar) + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tabbar-item {
+    @apply flex flex-1 flex-col items-center justify-center gap-0.5 text-xs text-fg-muted;
+    @apply aria-[current=page]:text-fg;
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
 }

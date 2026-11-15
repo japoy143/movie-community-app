@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm build)",
+      "Bash(npm test *)",
+      "Bash(npm typecheck)",
+      "Bash(git status)",
+      "Bash(git diff *)"
+    ],
+    "ask": ["Bash(git push)"],
+    "deny": ["Read(.env)", "Read(.env.*)", "Edit(.env)", "Edit(.env.*)"]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath' | { read -r f; case \"$f\" in *.ts|*.tsx) cd \"$CLAUDE_PROJECT_DIR\" && npx --no-install eslint --fix \"$f\";; esac; } 2>/dev/null || true",
+            "timeout": 30,
+            "statusMessage": "Linting with eslint --fix..."
+          }
+        ]
+      }
+    ]
+    
+  }
+}

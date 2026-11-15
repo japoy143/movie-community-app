@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794709933401,
+      "tag": "0000_auth",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794710620230,
+      "tag": "0001_community",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794712425639,
+      "tag": "0002_security_hardening",
+      "breakpoints": true
+    }
+  ]
+}
